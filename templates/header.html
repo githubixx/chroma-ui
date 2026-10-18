@@ -1,0 +1,27 @@
+{{define "chroma/header"}}
+<header>
+    <nav class="container" aria-label="{{if .NavigationLabel}}{{.NavigationLabel}}{{else}}Primary{{end}}">
+        <div class="nav-brand">
+            <h1>
+                <a href="{{if .BrandHref}}{{.BrandHref}}{{else}}/{{end}}">{{.Brand}}</a>
+                {{if .PageTitle}} - {{.PageTitle}}{{end}}
+            </h1>
+        </div>
+        <div class="nav-right">
+            {{if .Badge}}
+            <div class="nav-user"><span class="badge">{{.Badge}}</span></div>
+            {{end}}
+            <details class="nav-burger">
+                <summary class="btn btn-secondary btn-menu nav-burger-button" aria-label="{{if .MenuLabel}}{{.MenuLabel}}{{else}}Menu{{end}}">
+                    <span class="burger-icon" aria-hidden="true"></span>
+                </summary>
+                <div class="nav-burger-menu">
+                    {{range .Items}}
+                    <a href="{{.Href}}"{{if .Active}} class="active" aria-current="page"{{end}}>{{if .Icon}}<span class="nav-item-icon" aria-hidden="true">{{.Icon}}</span> {{end}}{{.Label}}</a>
+                    {{end}}
+                </div>
+            </details>
+        </div>
+    </nav>
+</header>
+{{end}}
