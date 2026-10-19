@@ -1,0 +1,42 @@
+name: Go
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GOWORK: "off"
+  GOFLAGS: "-mod=readonly"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: true
+      - run: go mod tidy -diff
+      - run: go mod verify
+      - run: go test -race ./...
+      - run: go vet ./...
+      - run: go build ./...
+
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/test-e2e.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: showcase-browser-results
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore

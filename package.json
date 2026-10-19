@@ -1,0 +1,12 @@
+{
+  "name": "chroma-ui-browser-tests",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:resources": "node test/e2e/resources.mjs",
+    "test:e2e:resources:update": "node test/e2e/resources.mjs --update-lock"
+  },
+  "devDependencies": { "@playwright/test": "1.64.1" }
+}

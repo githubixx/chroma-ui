@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"{{if ne .Theme "system"}} data-theme="{{.Theme}}"{{end}} data-theme-default="system">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{.App.Brand}} - Chroma UI showcase</title>
+    <link rel="stylesheet" href="{{.Prefix}}/css/base.css">
+    <style>
+        main { padding-top: var(--spacing); padding-bottom: calc(var(--spacing) * 2); }
+        .demo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--spacing); }
+        .demo-grid > *, .demo-section { min-width: 0; }
+        .demo-section { margin-bottom: var(--spacing); }
+        .demo-section h2 { margin-bottom: calc(var(--spacing) * 0.5); }
+        .demo-links, .demo-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+        .demo-links { margin-bottom: var(--spacing); }
+        .demo-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+        .demo-table { overflow-x: auto; }
+        .demo-note { color: var(--text-muted); margin-top: 0.75rem; }
+        .demo-svg { width: 1em; height: 1em; vertical-align: -0.1em; }
+    </style>
+    {{if ne .Theme "system"}}<link rel="stylesheet" href="{{.Prefix}}/themes/{{.Theme}}/theme.css">{{end}}
+    <script src="{{.Prefix}}/js/theme.js"></script>
+    <script defer src="{{.Prefix}}/js/menu.js"></script>
+    {{if .Enhanced}}<script defer src="{{.Prefix}}/js/select.js"></script>{{end}}
+</head>
+<body>
+    {{template "chroma/header" .Header}}
+    <main class="container">
+        <div class="demo-links" aria-label="Showcase variants">
+            <a class="btn btn-secondary" href="{{.MemoryHref}}">Memory Desk demo</a>
+            <a class="btn btn-secondary" href="{{.MailHref}}">Mail Console demo</a>
+            <a href="{{.ToggleHref}}">{{if .Enhanced}}Use native selects{{else}}Enhance selects{{end}}</a>
+        </div>
+        <section class="card demo-section" aria-labelledby="appearance">
+            <h2 id="appearance">Appearance</h2>
+            <form method="get" class="demo-controls">
+                <input type="hidden" name="app" value="{{.App.ID}}">
+                <input type="hidden" name="section" value="{{.Section}}">
+                <input type="hidden" name="enhance" value="{{if .Enhanced}}1{{else}}0{{end}}">
+                <label for="theme">Theme</label>
+                <select id="theme" name="theme">
+                    <option value="system"{{if eq .Theme "system"}} selected{{end}}>System</option>
+                    {{range .Themes}}<option value="{{.ID}}"{{if eq $.Theme .ID}} selected{{end}}>{{.Name}}</option>{{end}}
+                </select>
+                <button class="btn btn-primary" type="submit">Apply appearance</button>
+            </form>
+            <p class="demo-note">The application owns selection and navigation. System mode follows your OS; nothing is stored in a cookie or local storage.</p>
+        </section>
+        <div class="demo-grid">
+            <section class="card demo-section" aria-labelledby="actions">
+                <h2 id="actions">{{.Section}}</h2>
+                <div class="demo-actions">
+                    <button class="btn btn-primary" type="button"><span aria-hidden="true">{{.App.Symbol}}</span> {{.App.Action}}</button>
+                    <button class="btn btn-secondary" type="button">
+                        <svg class="demo-svg" aria-hidden="true" viewBox="0 0 16 16"><path fill="currentColor" d="M2 2h12v12H2zm2 2v8h8V4z"/></svg>
+                        Export selection
+                    </button>
+                    <button class="btn btn-danger" type="button" disabled>Delete selection</button>
+                </div>
+                <p class="demo-note">These are presentation examples, not working memory or mail-management actions. Labels, text icons, and the SVG belong to this application.</p>
+            </section>
+            <section class="card demo-section" aria-labelledby="fields">
+                <h2 id="fields">Form controls</h2>
+                <form id="sample-form" class="form-grid">
+                    <label for="title">Title</label>
+                    <input type="text" id="title" name="title" value="Example item">
+                    <label for="visibility">Visibility</label>
+                    <select id="visibility" name="visibility">
+                        <option value="private">Private</option>
+                        <option value="blocked" disabled>Unavailable</option>
+                        <option value="shared">Shared</option>
+                    </select>
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" name="notes" rows="2">Application-owned content</textarea>
+                    <label for="locked">Read-only policy</label>
+                    <select id="locked" disabled><option>Managed externally</option></select>
+                    <div class="form-actions"><button class="btn btn-secondary" type="reset">Reset example</button></div>
+                </form>
+            </section>
+            <section class="card demo-section" aria-labelledby="states">
+                <h2 id="states">Generic item states</h2>
+                <div class="ui-list">
+                    <article class="ui-item"><div class="ui-item-info"><h3>Default item</h3><p class="ui-item-subtitle">No domain-specific class required.</p><p class="ui-item-meta">Example data</p></div></article>
+                    <article class="ui-item is-active"><div class="ui-item-info"><h3>Active item</h3><p class="ui-item-subtitle">Healthy activity, not an error.</p></div></article>
+                    <article class="ui-item is-warning"><div class="ui-item-info"><h3>Warning item</h3><p class="ui-item-subtitle">Needs attention.</p></div></article>
+                    <article class="ui-item is-error"><div class="ui-item-info"><h3>Error item</h3><p class="ui-item-subtitle">Requires intervention.</p></div></article>
+                    <article class="ui-item is-inactive"><div class="ui-item-info"><h3>Inactive item</h3><p class="ui-item-subtitle">Inactive, not an error or a disabled control.</p></div></article>
+                </div>
+            </section>
+            <section class="card demo-section" aria-labelledby="table">
+                <h2 id="table">Table and progress</h2>
+                <div class="demo-table">
+                    <table class="data-table"><thead><tr><th scope="col">Item</th><th scope="col">State</th></tr></thead>
+                    <tbody><tr><td>First example</td><td><span class="badge">Ready</span></td></tr><tr><td>Second example</td><td>Pending</td></tr></tbody></table>
+                </div>
+                <p id="progress-label">Example progress</p>
+                <div class="progress" role="progressbar" aria-labelledby="progress-label" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: 65%"></div></div>
+            </section>
+        </div>
+    </main>
+</body>
+</html>
