@@ -1,39 +1,40 @@
 # Chroma UI
 
-Reusable themes for server-rendered Go applications, extracted from
+Reusable themes for server-rendered Go applications, initially extracted from
 [vdradmin-go](https://github.com/githubixx/vdradmin-go).
 
-**Work in progress:** the catalog, shared component stylesheet, configurable
-navigation, optional JavaScript helpers, and standalone showcase are implemented.
+The library embeds 37 themes, a validated theme catalog, shared component CSS,
+configurable navigation templates, and optional JavaScript helpers. Applications
+retain their own content, routes, layouts, authorization, and theme selection.
 
-All 37 original themes are embedded. The first consumer, vdradmin-go, is
-integrated and verified through an explicit local Go workspace. Publication
-and a portable consumer dependency pin remain the next release milestone;
-there is no published release yet.
+## Installation
 
-## Release readiness (no publication)
+Requires Go 1.26 or newer. Import path: `github.com/githubixx/chroma-ui`,
+package name: `chromaui`.
 
-Before publishing, verify the reviewed working tree independently of VDR:
+To add the latest available Go module version:
 
 ```sh
-GOWORK=off go mod tidy -diff
-GOWORK=off go mod verify
-GOWORK=off GOFLAGS=-mod=readonly go test -race ./...
-GOWORK=off GOFLAGS=-mod=readonly go vet ./...
-GOWORK=off GOFLAGS=-mod=readonly go build ./...
-bash scripts/test-e2e.sh
+go get github.com/githubixx/chroma-ui@latest
 ```
 
-CI runs these standalone module and browser checks. They do not stage, commit,
-tag, push, or publish anything. Publication remains a manual, post-review
-decision; there is no automated publishing workflow.
+For reproducible updates, select an exact published version or pushed commit
+hash instead of `latest`, and review the resulting `go.mod` and `go.sum`.
 
-Once you have reviewed, committed, and published the chosen library revision,
-consumers can pin its exact real Go module version. VDR's
-[release-readiness handoff](https://github.com/githubixx/vdradmin-go#release-readiness-and-post-review-handoff)
-then checks the consumer with workspace mode disabled. Its standalone CI and
-default Docker builds intentionally remain blocked until that dependency pin
-exists. A successful local workspace build is not a substitute.
+## Release readiness
+
+Before tagging, run the standalone checks in [Validation](#validation), review
+the documentation and public API, and commit the intended release contents.
+Tag that exact commit and push it explicitly; never move an existing release
+tag to different contents.
+
+Go module version tags require a leading `v`, for example `v0.1.0`. See the [Go module version rules](https://go.dev/ref/mod#versions).
+
+A branch merge or GitHub Release is not required for Go to fetch a pushed
+revision. CI validates the library but does not commit, tag, push, or publish;
+there is no automated publishing workflow. After pushing the chosen tag or
+commit, verify it resolves through Go with workspaces disabled before updating
+consumers. A successful local workspace build is not a substitute.
 
 ## Standalone showcase
 
@@ -43,14 +44,11 @@ go run ./examples/showcase -addr 127.0.0.1:18764 -assets-prefix /demo/skin
 
 Open <http://127.0.0.1:18764/>. Switch between **Memory Desk** and **Mail Console** to see application-owned branding, menus, active links, display badges, action labels, text icons, and inline SVG buttons using the same shared components. These are presentation examples. Demo action buttons do not modify data.
 
-Try all 37 themes and System mode, mobile widths, and the native-select toggle.
+Try all themes and System mode, mobile widths, and the native-select toggle.
 The showcase embeds its page and shared assets into its binary; it does not
-need a VDR checkout or working-directory-relative asset files.
+need another application checkout or working-directory-relative asset files.
 
 ## Foundation API
-
-Requires Go 1.26 or newer. Import path: `github.com/githubixx/chroma-ui`,
-package name: `chromaui`.
 
 ```go
 catalog, err := chromaui.NewCatalog(nil)
@@ -142,20 +140,16 @@ its own stylesheet (for example, a theme-local `body` background rule). CSS
 resolves relative URLs where a property is consumed; consuming the same
 relative token only from the shared stylesheet would target its `css/` folder.
 
-Domain list selectors are mapped to `.ui-item` and its subcomponents; domain
-activity/warning/error states use `.is-active`, `.is-warning`, and `.is-error`.
+Generic lists use `.ui-item` and its subcomponents; activity/warning/error
+states use `.is-active`, `.is-warning`, and `.is-error`.
 An inactive item uses `.is-inactive`, independently of disabled form controls.
-Retro Arcade's generic active item uses healthy success styling, rather than
-the source application's recording-specific pink. A consumer retaining that
-domain-specific recording color can apply it in its compatibility stylesheet.
-Watch TV, channel/timer timelines, application columns, and other page-specific
-rules are deliberately not part of the library. Consumers retain those rules
-in their own compatibility stylesheet. This includes Metal's channel-day pill
-and CRT's mobile channel/timer adjustments.
+Application-specific state treatments, timelines, columns, and page layouts
+are deliberately not part of the library. Consumers retain those rules in
+their own stylesheets without redefining generic component semantics.
 
 ## Components and navigation
 
-The CSS contract retains familiar hooks from the original UI:
+The CSS contract provides these reusable hooks:
 
 | Hook | Purpose |
 | --- | --- |
@@ -164,7 +158,7 @@ The CSS contract retains familiar hooks from the original UI:
 | `.toolbar` | Wrapping control/action grouping |
 | `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger` | Buttons/links; content belongs to the application |
 | `.badge` | Display badge, not an authorization mechanism |
-| `.ui-list`, `.ui-item` | Generic list items, without VDR-specific class names |
+| `.ui-list`, `.ui-item` | Generic list items, without application-specific class names |
 | `.ui-item.is-active`, `.is-warning`, `.is-error` | Healthy activity, attention, and error states |
 | `.ui-item.is-inactive` | Muted inactive item, not an error |
 | `.form-grid`, `.radio-group`, `.form-actions` | Form layout helpers |
@@ -179,7 +173,7 @@ Every bundled theme and custom theme must preserve these meanings:
 | Item state | Required border or frame accent | Meaning |
 | --- | --- | --- |
 | `.ui-item` without a state | Ordinary theme border, distinct from active | No status implied |
-| `.ui-item.is-active` | Green | Healthy activity, not an error or recording-specific danger state |
+| `.ui-item.is-active` | Green | Healthy activity, not an error |
 | `.ui-item.is-warning` | Yellow or orange | Attention needed |
 | `.ui-item.is-error` | Red | Error or intervention needed |
 | `.ui-item.is-inactive` | Muted, visually distinct from active | Inactive, not an error |
@@ -189,12 +183,12 @@ but must not swap these hues or replace them with a monochrome palette.
 A visible colored edge is sufficient in general; Spaceship themes use the
 semantic color around the full border, including HUD corner decorations.
 SVG-framed themes must color the frame itself, not only the content inside it.
-Default items must not reuse the active
-status border. Keep text or icons alongside color so status is not conveyed by
+Default items must not reuse the active status border. Keep text or icons
+alongside color so status is not conveyed by
 color alone.
 
 Button palettes and application-specific states are separate: consumers may
-retain a legacy recording treatment in their own compatibility stylesheet
+retain domain-specific treatments in their own compatibility stylesheet
 without redefining the generic item meanings.
 
 Item subcomponents are `.ui-item-info` (containing an `h3`),
@@ -236,11 +230,11 @@ if err != nil {
 }
 // Parse application pages into the same set, then render:
 header := chromaui.Header{
-    Brand: "Memory Desk", BrandHref: "/memories", PageTitle: "Albums",
-    Badge: "Curator", MenuLabel: "Navigate", NavigationLabel: "Collections",
+    Brand: "Example App", BrandHref: "/", PageTitle: "Items",
+    Badge: "Editor", MenuLabel: "Navigate", NavigationLabel: "Primary",
     Items: []chromaui.MenuItem{
-        {Label: "Memories", Href: "/memories", Icon: "+"},
-        {Label: "Albums", Href: "/albums", Icon: "#", Active: true},
+        {Label: "Overview", Href: "/", Icon: "+"},
+        {Label: "Items", Href: "/items", Icon: "#", Active: true},
     },
 }
 err = templates.ExecuteTemplate(w, "chroma/header", header)
@@ -253,8 +247,8 @@ are HTML-escaped and URLs use Go's contextual escaping; no trusted HTML is
 required. Applications filter visible items and enforce backend authorization.
 
 Buttons are normal HTML: choose any label or text symbol. Put application-owned
-SVG in your own templates, as the showcase does; there is no icon-font, VDR
-menu, or htmx dependency.
+SVG in your own templates, as the showcase does; there is no icon-font,
+application-menu, or htmx dependency.
 
 ### Optional JavaScript
 
@@ -365,9 +359,11 @@ they need a consistent on-disk update.
 ## Validation
 
 ```sh
-go test -race ./...
-go vet ./...
-go build ./...
+GOWORK=off go mod tidy -diff
+GOWORK=off go mod verify
+GOWORK=off GOFLAGS=-mod=readonly go test -race ./...
+GOWORK=off GOFLAGS=-mod=readonly go vet ./...
+GOWORK=off GOFLAGS=-mod=readonly go build ./...
 bash scripts/test-e2e.sh
 ```
 
@@ -377,14 +373,17 @@ Playwright 1.64.1 Ubuntu amd64. Tests exercise both example applications,
 desktop/mobile layout, all bundled themes and System mode, mounted artwork,
 motion preferences, SVG frames/state fills, menus, keyboard and
 pointer selects, reset/validation, dynamic fragments, single change handling,
-and no-JavaScript fallback. These are behavior/layout tests, not replacement
-screenshots for the VDR migration baseline.
+and no-JavaScript fallback. These are library behavior/layout tests; consumers
+remain responsible for testing their own application integration.
 
 The matrix covers both sample applications at 1440px and 390px for every
 bundled theme. Open-list checks compare pixels while changing the panels
 underneath, check selected-text contrast, scroll to and click the last option,
 and ensure the host card is not scrolled to compensate for clipping. Long-list
 tests also verify the current selection is visible without a page jump.
+Item-state checks verify semantic border hues, distinguish default from active,
+and inspect rendered SVG frames. Spaceship variants additionally verify all
+four rendered state-border edges and matching HUD corner decorations.
 
 Actual Google Fonts resources are hash-locked in
 `test/e2e/resources.lock.json`; browser HTTPS requests are fulfilled from a
@@ -400,7 +399,7 @@ Review the lock changes before accepting them. Do not replace fonts with
 silent system-font fallbacks. Browser selectors can be passed to the runner,
 for example `bash scripts/test-e2e.sh --project=firefox`.
 
-Develop against an unpublished checkout with an external Go workspace, not a
+Develop against a local checkout with an external Go workspace, not a
 committed local `replace` directive. Consumers must eventually pin a real
 published revision; do not invent a release version.
 
@@ -413,9 +412,7 @@ original metadata and attribution. The shared CSS, header structure, bootstrap,
 menu behavior, and optional select helper are derived from the original
 `web/static/css/base.css`, `web/templates/_nav.html`, and
 `web/static/js/theme.js`; application-specific layout and policy are excluded.
-The CRT runtime WebP images derive from the user's original generated CRT
-artwork, as documented in the source project's
-[theme guide](https://github.com/githubixx/vdradmin-go/blob/main/docs/THEMES.md).
+The CRT runtime WebP images derive from original generated CRT artwork.
 Within the CRT theme, only `crt-hero-fade.webp` and `crt-sky.webp` are bundled,
 not the source PNG.
 Metadata and runtime artwork are checked against original SHA-256 fingerprints;

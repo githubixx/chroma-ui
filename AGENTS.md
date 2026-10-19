@@ -7,7 +7,7 @@
   public API, asset, theme, and component contracts.
 - Keep branding, menus, button content, routes, authorization, theme selection
   and persistence, and domain-specific layouts in consumers. Do not introduce
-  VDR, Memory Desk, or Mail Console policy into shared components.
+  application-specific policy into shared components.
 - Catalog and HTTP behavior live in the root Go package; shared presentation
   lives in [assets/](assets/) and [templates/](templates/). The
   [showcase](examples/showcase/) demonstrates two independent consumers and
@@ -92,5 +92,5 @@
   tags, pushes, or publication.
 - Do not commit local workspace files or local `replace` directives, invent
   release versions, or pin consumers to unpublished versions. Follow the
-  [release-readiness handoff](README.md#release-readiness-no-publication) only
+  [release-readiness guidance](README.md#release-readiness) only
   when the corresponding review/publication actions are authorized.
