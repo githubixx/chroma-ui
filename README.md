@@ -156,6 +156,7 @@ The CSS contract provides these reusable hooks:
 | `.container` | Centered, responsive content width |
 | `.card`, `.panel` | Generic surfaces |
 | `.toolbar` | Wrapping control/action grouping |
+| `.ui-pager` | Centered, wrapping previous/range/next composition; optionally combine with `.toolbar` |
 | `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-danger` | Buttons/links; content belongs to the application |
 | `.badge` | Display badge, not an authorization mechanism |
 | `.ui-list`, `.ui-item` | Generic list items, without application-specific class names |
@@ -165,6 +166,38 @@ The CSS contract provides these reusable hooks:
 | `.data-table` | Styled table, with optional `tr.is-selected` and `td.actions` |
 | `.progress` → `.progress-bar` | Progress track/bar; set bar width for determinate progress |
 | `.nav-brand`, `.nav-right`, `.nav-burger`, `.nav-burger-menu` | Compatible navigation markup |
+
+### Pager
+
+Compose `.ui-pager` with existing themed buttons and an application-owned range
+label. Add `.toolbar` for a themed surface, or omit it for a bare pager:
+
+```html
+<nav class="ui-pager toolbar" aria-label="Item pages">
+  <button class="btn btn-secondary btn-nav" type="button"
+          aria-label="Previous page" disabled>&lt;</button>
+  <span role="status" aria-live="polite" aria-atomic="true">Items 1–4 of 12</span>
+  <button class="btn btn-secondary btn-nav" type="button"
+          aria-label="Next page">&gt;</button>
+</nav>
+```
+
+The layout centers and wraps its contents at narrow widths. Range text can
+wrap, including long unbroken labels. The `hidden` attribute hides the entire
+pager, including when combined with `.toolbar`. Native buttons retain their
+theme's focus and disabled treatment.
+
+Applications own all labels, symbols, ranges, event handlers, URLs, disabled
+states and focus behavior. Disable Previous on the first page and Next on the
+last page; disable both for a single page, or hide the pager when unnecessary.
+Give symbol-only buttons accessible names and distinguish navigation landmarks
+if a page contains multiple pagers. Update the existing status node when client
+code changes the range so assistive technology can announce it.
+
+No paging JavaScript or Go model is provided. For server navigation without
+JavaScript, applications can use normal links for enabled directions and
+disabled buttons for unavailable ones, or submit buttons in an application-owned
+form. `aria-disabled` on a link alone does not prevent navigation.
 
 ### Item state color contract
 

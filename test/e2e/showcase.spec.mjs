@@ -73,6 +73,52 @@ const themes = [
     { id: 'crt-starfield-1', font: 'Space Grotesk', radius: 0.25, scheme: 'dark' },
 ];
 
+async function expectPagerLayout(page) {
+    const pagers = page.locator('.ui-pager');
+    await expect(pagers).toHaveCount(3);
+    for (const pager of await pagers.all()) {
+        await expect(pager).toHaveCSS('display', 'flex');
+        await expect(pager).toHaveCSS('justify-content', 'center');
+        await expect(pager).toHaveCSS('flex-wrap', 'wrap');
+        await expect(pager).toHaveRole('navigation');
+        await expect(pager).toHaveAccessibleName(/Memory Desk|Mail Console/);
+        await expect(pager.getByRole('status')).toHaveAttribute('aria-live', 'polite');
+        await expect(pager.getByRole('status')).toHaveAttribute('aria-atomic', 'true');
+        const layout = await pager.evaluate(element => {
+            const rect = node => {
+                const { left, right, top, bottom } = node.getBoundingClientRect();
+                return { left, right, top, bottom };
+            };
+            return {
+                box: rect(element),
+                scrollWidth: element.scrollWidth, clientWidth: element.clientWidth,
+                children: [...element.children].map(rect),
+            };
+        });
+        expect(layout.scrollWidth, 'Pager must not require horizontal scrolling').toBeLessThanOrEqual(layout.clientWidth + 1);
+        for (const child of layout.children) {
+            expect(child.left).toBeGreaterThanOrEqual(layout.box.left - 1);
+            expect(child.right).toBeLessThanOrEqual(layout.box.right + 1);
+            expect(child.top).toBeGreaterThanOrEqual(layout.box.top - 1);
+            expect(child.bottom).toBeLessThanOrEqual(layout.box.bottom + 1);
+        }
+        for (let i = 0; i < layout.children.length; i++) {
+            for (let j = i + 1; j < layout.children.length; j++) {
+                const a = layout.children[i], b = layout.children[j];
+                expect(a.right <= b.left + 1 || b.right <= a.left + 1 ||
+                    a.bottom <= b.top + 1 || b.bottom <= a.top + 1,
+                'Pager controls and status must not overlap').toBe(true);
+            }
+        }
+    }
+    await expect(pagers.first().getByRole('button', { name: 'Previous page' })).toBeDisabled();
+    await expect(pagers.first().getByRole('button', { name: 'Next page' })).toBeEnabled();
+    await expect(pagers.nth(1).getByRole('button', { name: 'Previous page' })).toBeEnabled();
+    await expect(pagers.nth(1).getByRole('button', { name: 'Next page' })).toBeEnabled();
+    await expect(pagers.last().getByRole('button', { name: 'Previous page' })).toBeEnabled();
+    await expect(pagers.last().getByRole('button', { name: 'Next page' })).toBeDisabled();
+}
+
 for (const app of ['memory', 'mail']) {
     for (const theme of themes) {
         for (const width of [1440, 390]) {
@@ -123,6 +169,7 @@ for (const app of ['memory', 'mail']) {
                 expect(bar.height).toBeGreaterThan(0);
                 expect(Math.abs(bar.width / track.width - 0.65)).toBeLessThan(0.02);
                 expect(await page.locator('.data-table th').first().evaluate(element => parseFloat(getComputedStyle(element).paddingLeft))).toBeGreaterThan(1);
+                await expectPagerLayout(page);
                 if (app === 'memory') {
                     await page.screenshot({ path: testInfo.outputPath('showcase.png'), fullPage: true });
                 }
@@ -151,6 +198,55 @@ for (const app of ['memory', 'mail']) {
         }
     }
 }
+
+for (const app of ['memory', 'mail']) {
+    test(`${app} pager preserves keyboard access, native boundaries and live status`, async ({ page }) => {
+        await open(page, `?app=${app}&theme=light`);
+        const pagers = page.locator('.ui-pager');
+        const firstNext = pagers.first().getByRole('button', { name: 'Next page' });
+        const middlePrevious = pagers.nth(1).getByRole('button', { name: 'Previous page' });
+        await firstNext.focus();
+        await page.keyboard.press('Tab');
+        await expect(middlePrevious).toBeFocused();
+        await page.keyboard.press('Shift+Tab');
+        await expect(firstNext).toBeFocused();
+        await pagers.first().getByRole('button', { name: 'Previous page' }).focus();
+        await expect(firstNext).toBeFocused();
+        const lastPrevious = pagers.last().getByRole('button', { name: 'Previous page' });
+        await lastPrevious.focus();
+        await page.keyboard.press('Tab');
+        await expect(pagers.last().getByRole('button', { name: 'Next page' })).not.toBeFocused();
+        const status = pagers.nth(1).getByRole('status');
+        await status.evaluate(element => { element.textContent = 'Application-owned updated range'; });
+        await expect(status).toHaveText('Application-owned updated range');
+        await expect(status).toHaveAttribute('aria-live', 'polite');
+        await expectPagerLayout(page);
+    });
+}
+
+test('pager wraps long ranges and supports hidden and bare compositions', async ({ page }, testInfo) => {
+    for (const theme of ['metal-1', 'spaceship-2']) {
+        for (const app of ['memory', 'mail']) {
+            await open(page, `?app=${app}&theme=${theme}`);
+            const pagers = page.locator('.ui-pager');
+            await pagers.first().evaluate(element => { element.hidden = true; });
+            await expect(pagers.first()).toBeHidden();
+            await pagers.first().evaluate(element => { element.hidden = false; });
+            await expect(pagers.first()).toBeVisible();
+            await pagers.nth(1).evaluate(element => { element.classList.remove('toolbar'); });
+            await pagers.nth(1).getByRole('status').evaluate(element => {
+                element.textContent = 'VeryLongApplicationOwnedRangeLabel'.repeat(12);
+            });
+            for (const width of [390, 320]) {
+                await page.setViewportSize({ width, height: 1000 });
+                await expectPagerLayout(page);
+                expect(await page.evaluate(() => document.documentElement.scrollWidth))
+                    .toBeLessThanOrEqual(width);
+            }
+            await pagers.first().screenshot({ path: testInfo.outputPath(`${app}-${theme}-pager.png`), animations: 'disabled' });
+        }
+    }
+});
 
 function hasSemanticHue(channels, state) {
     const [red, green, blue, alpha = 1] = channels;
@@ -572,6 +668,7 @@ for (const colorScheme of ['light', 'dark']) {
         expect(await page.locator('html').evaluate(element => getComputedStyle(element).colorScheme)).not.toBe(colorScheme);
         expect(await page.context().cookies()).toEqual([]);
         expect(await page.evaluate(() => localStorage.length)).toBe(0);
+        await expectPagerLayout(page);
     });
 }
 
@@ -590,7 +687,7 @@ test('theme bootstrap preserves an explicit server theme and honors its fallback
     await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
 });
 
-test('native selects and navigation remain usable without JavaScript', async ({ browser }) => {
+test('native selects, navigation and pager remain usable without JavaScript', async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const errors = [];
     await routeResources(context, errors);
@@ -603,6 +700,7 @@ test('native selects and navigation remain usable without JavaScript', async ({ 
         await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
         await page.getByLabel('Navigate', { exact: true }).click();
         await expect(page.getByRole('link', { name: 'Albums', exact: true })).toBeVisible();
+        await expectPagerLayout(page);
         expect(errors).toEqual([]);
     } finally {
         await context.close();
