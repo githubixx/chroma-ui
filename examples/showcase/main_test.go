@@ -35,6 +35,8 @@ func TestShowcaseVariantsAndMount(t *testing.T) {
 			tt.brand, tt.action, tt.section, `href="/nested/skin/css/base.css"`,
 			`src="/nested/skin/js/menu.js"`, `src="/nested/skin/js/select.js"`,
 			`class="nav-item-icon"`, `class="demo-svg"`,
+			`class="ui-pager toolbar"`, `aria-label="` + tt.brand + ` first page"`,
+			`role="status" aria-live="polite" aria-atomic="true">` + tt.section + ` 1–4 of 12`,
 		} {
 			if !strings.Contains(body.Body.String(), want) {
 				t.Errorf("%s: missing %q", tt.url, want)

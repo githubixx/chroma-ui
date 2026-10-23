@@ -97,6 +97,25 @@
                 <div class="progress" role="progressbar" aria-labelledby="progress-label" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: 65%"></div></div>
             </section>
         </div>
+        <section class="card demo-section" aria-labelledby="paging">
+            <h2 id="paging">Pager</h2>
+            <nav class="ui-pager toolbar" aria-label="{{.App.Brand}} first page">
+                <button class="btn btn-secondary btn-nav" type="button" aria-label="Previous page" disabled>&lt;</button>
+                <span role="status" aria-live="polite" aria-atomic="true">{{.Section}} 1–4 of 12</span>
+                <button class="btn btn-secondary btn-nav" type="button" aria-label="Next page">&gt;</button>
+            </nav>
+            <nav class="ui-pager toolbar" aria-label="{{.App.Brand}} middle page">
+                <button class="btn btn-secondary btn-nav" type="button" aria-label="Previous page">&lt;</button>
+                <span role="status" aria-live="polite" aria-atomic="true">{{.Section}} 5–8 of 12</span>
+                <button class="btn btn-secondary btn-nav" type="button" aria-label="Next page">&gt;</button>
+            </nav>
+            <nav class="ui-pager toolbar" aria-label="{{.App.Brand}} last page">
+                <button class="btn btn-secondary btn-nav" type="button" aria-label="Previous page">&lt;</button>
+                <span role="status" aria-live="polite" aria-atomic="true">{{.Section}} 9–12 of 12</span>
+                <button class="btn btn-secondary btn-nav" type="button" aria-label="Next page" disabled>&gt;</button>
+            </nav>
+            <p class="demo-note">First, middle and last page examples. The application owns labels, ranges, disabled states and navigation; these demonstration buttons do not change pages.</p>
+        </section>
     </main>
 </body>
 </html>

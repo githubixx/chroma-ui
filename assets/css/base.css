@@ -833,6 +833,25 @@ details.nav-burger:not([open]) .nav-burger-menu {
     z-index: 40;
 }
 
+.ui-pager {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--spacing);
+}
+
+.ui-pager[hidden] {
+    display: none;
+}
+
+.ui-pager > [role="status"] {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-align: center;
+}
+
 /* Data Table */
 .data-table {
     width: 100%;
