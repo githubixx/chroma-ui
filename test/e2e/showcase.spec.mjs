@@ -55,6 +55,8 @@ const themes = [
     { id: 'glas-1', font: 'Inter', radius: 0.75, scheme: 'light' },
     { id: 'gold-1', font: 'Inter', radius: 0.35, scheme: 'dark' },
     { id: 'golden-moon', font: 'Lora', radius: 0.75, scheme: 'dark' },
+    { id: 'leather-style-black-1', font: 'Inter', radius: 0.75, scheme: 'dark' },
+    { id: 'leather-style-red-1', font: 'Inter', radius: 0.75, scheme: 'dark' },
     { id: 'lighting-1', font: 'Rajdhani', radius: 0.25, scheme: 'dark' },
     { id: 'luxury-1', font: 'Inter', radius: 0.75, scheme: 'dark' },
     { id: 'mantle-1', font: 'Inter', radius: 1, scheme: 'dark' },
@@ -117,6 +119,107 @@ async function expectPagerLayout(page) {
     await expect(pagers.nth(1).getByRole('button', { name: 'Next page' })).toBeEnabled();
     await expect(pagers.last().getByRole('button', { name: 'Previous page' })).toBeEnabled();
     await expect(pagers.last().getByRole('button', { name: 'Next page' })).toBeDisabled();
+}
+
+for (const width of [1440, 390]) {
+    test(`leather-style-black-1 polished highlights retain compact component sizing at ${width}px`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 1000 });
+        const dimensions = () => page.locator('.demo-actions .btn, #title, #notes, .custom-select-trigger').evaluateAll(elements =>
+            elements.map(element => {
+                const style = getComputedStyle(element);
+                return [style.padding, style.fontSize, style.borderWidth, style.borderRadius,
+                    element.getBoundingClientRect().width, element.getBoundingClientRect().height];
+            }));
+        await open(page, '?theme=leather-style-red-1');
+        const original = await dimensions();
+        await open(page, '?theme=leather-style-black-1');
+        expect(await dimensions(), 'Gloss must not enlarge buttons or form controls').toEqual(original);
+        const capture = await page.locator('.card').first().screenshot({ animations: 'disabled' });
+        const reflection = await page.evaluate(async imageData => {
+            const image = new Image();
+            image.src = `data:image/png;base64,${imageData}`;
+            await image.decode();
+            const canvas = document.createElement('canvas');
+            canvas.width = image.width;
+            canvas.height = image.height;
+            const context = canvas.getContext('2d');
+            context.drawImage(image, 0, 0);
+            const brightness = y => {
+                const pixels = context.getImageData(Math.floor(image.width / 2), y, 5, 5).data;
+                let total = 0;
+                for (let i = 0; i < pixels.length; i += 4) total += pixels[i] + pixels[i + 1] + pixels[i + 2];
+                return total / 75;
+            };
+            return { highlight: brightness(16), body: brightness(image.height - 24) };
+        }, capture.toString('base64'));
+        expect(reflection.highlight, 'Polished highlights must visibly lift the dark panel surface').toBeGreaterThan(reflection.body + 8);
+        expect(reflection.highlight, 'Panel highlights remain restrained rather than white glare').toBeLessThan(100);
+    });
+}
+
+for (const [width, height] of [[1561, 600], [1920, 1080], [390, 844]]) {
+    for (const app of ['memory', 'mail']) {
+        test(`leather-style-black-1 retains the background head in ${app} at ${width}x${height}`, async ({ page }, testInfo) => {
+            await page.setViewportSize({ width, height });
+            await open(page, `?app=${app}&theme=leather-style-black-1`);
+            await page.screenshot({ path: testInfo.outputPath('head-layout.png'), animations: 'disabled' });
+            const mobile = width <= 768;
+            const hideContent = await page.addStyleTag({ content: 'body > * { visibility: hidden !important; }' });
+            let capture;
+            try {
+                capture = await page.screenshot({ path: testInfo.outputPath('head-background.png'), animations: 'disabled' });
+            } finally {
+                await hideContent.evaluate(element => element.remove());
+            }
+            const framing = await page.evaluate(async ({ screenshot, mobile }) => {
+                const background = getComputedStyle(document.body).backgroundImage;
+                const url = background.match(/url\(["']?([^"')]+)["']?\)/)[1];
+                const artwork = new Image();
+                artwork.src = url;
+                const actual = new Image();
+                actual.src = `data:image/png;base64,${screenshot}`;
+                await Promise.all([artwork.decode(), actual.decode()]);
+                const viewportWidth = document.documentElement.clientWidth;
+                const scale = Math.max(viewportWidth / artwork.width, innerHeight / artwork.height);
+                const offsetX = (viewportWidth - artwork.width * scale) / 2;
+                // Source coordinates enclose the approved model's hair and face.
+                const x = Math.round((mobile ? 180 : 1100) * scale + offsetX);
+                const y = Math.round(30 * scale);
+                const size = Math.round(180 * scale);
+                const canvas = document.createElement('canvas');
+                canvas.width = innerWidth;
+                canvas.height = innerHeight;
+                const context = canvas.getContext('2d');
+                context.drawImage(artwork, offsetX, 0, artwork.width * scale, artwork.height * scale);
+                const expected = context.getImageData(x, y, size, size).data;
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(actual, 0, 0);
+                const rendered = context.getImageData(x, y, size, size).data;
+                let total = 0;
+                for (let i = 0; i < expected.length; i += 4) {
+                    for (let channel = 0; channel < 3; channel++) {
+                        total += Math.abs(expected[i + channel] - rendered[i + channel]);
+                    }
+                }
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                context.drawImage(artwork, 0, 0);
+                const skin = context.getImageData(mobile ? 265 : 1185, 80, 20, 20).data;
+                let warmth = 0;
+                for (let i = 0; i < skin.length; i += 4) warmth += skin[i] - skin[i + 2];
+                return {
+                    difference: total / (size * size * 3),
+                    x, y, right: x + size, bottom: y + size,
+                    warmth: warmth / 400,
+                };
+            }, { screenshot: capture.toString('base64'), mobile });
+            expect(framing.difference, 'Rendered hair and face must match the uncropped artwork').toBeLessThan(10);
+            expect(framing.right).toBeLessThanOrEqual(width);
+            expect(framing.bottom).toBeLessThanOrEqual(height);
+            expect(framing.x).toBeGreaterThanOrEqual(0);
+            expect(framing.y).toBeGreaterThanOrEqual(0);
+            expect(framing.warmth, 'The approved skin tones must retain natural color, not grayscale').toBeGreaterThan(15);
+        });
+    }
 }
 
 for (const app of ['memory', 'mail']) {
@@ -287,7 +390,9 @@ function readItemBorder(element) {
 
 async function expectSemanticItemBorders(page) {
     const ordinary = await page.locator('.ui-item').first().evaluate(readItemBorder);
-    const spaceship = (await page.locator('html').getAttribute('data-theme')).startsWith('spaceship');
+    const theme = await page.locator('html').getAttribute('data-theme');
+    const spaceship = theme.startsWith('spaceship');
+    const leather = theme.startsWith('leather-style-');
     for (const state of ['active', 'warning', 'error']) {
         const item = page.locator(`.ui-item.is-${state}`);
         const border = await item.evaluate(readItemBorder);
@@ -321,7 +426,7 @@ async function expectSemanticItemBorders(page) {
                     `${state} ${edge.name} must have a semantic hue, received ${edge.color}`).toBe(true);
             }
         }
-        if (border.framed || spaceship) {
+        if (border.framed || spaceship || leather) {
             const capture = await item.screenshot({ animations: 'disabled' });
             const strips = await page.evaluate(async ({ imageData, allEdges }) => {
                 const image = new Image();
@@ -344,7 +449,7 @@ async function expectSemanticItemBorders(page) {
                     name: edge.name, length: edge.length,
                     pixels: Array.from(context.getImageData(edge.x, edge.y, edge.width, edge.height).data),
                 }));
-            }, { imageData: capture.toString('base64'), allEdges: spaceship });
+            }, { imageData: capture.toString('base64'), allEdges: spaceship || leather });
             for (const strip of strips) {
                 let colored = 0;
                 for (let offset = 0; offset < strip.pixels.length; offset += 4) {
@@ -395,7 +500,7 @@ async function expectOpaqueDropdown(page, dropdown) {
 }
 
 for (const width of [1440, 390]) {
-    for (const theme of ['aurora-glass-1', 'space-night-1']) {
+    for (const theme of ['aurora-glass-1', 'space-night-1', 'leather-style-red-1', 'leather-style-black-1']) {
         test(`${theme} uses mounted responsive artwork at ${width}px`, async ({ page }) => {
             await page.setViewportSize({ width, height: 1000 });
             await open(page, `?theme=${theme}`);
@@ -414,7 +519,7 @@ for (const width of [1440, 390]) {
         const picker = page.getByRole('combobox', { name: 'Theme', exact: true });
         await picker.click();
         const dropdown = page.locator('.custom-select-dropdown.open');
-        await expect(dropdown.getByRole('option')).toHaveCount(38);
+        await expect(dropdown.getByRole('option')).toHaveCount(themes.length + 1);
         const list = await dropdown.boundingBox();
         const selected = await dropdown.locator('.selected').boundingBox();
         expect(selected.y).toBeGreaterThanOrEqual(list.y);
@@ -454,6 +559,274 @@ for (const width of [1440, 390]) {
         for (const comet of await comets()) expect(comet.animation).toBe('none');
         await page.emulateMedia({ media: 'print' });
         for (const comet of await comets()) expect(comet.display).toBe('none');
+    });
+}
+
+async function expectRasterTextContrast(page, locator, foreground) {
+    const previous = await locator.evaluate(element => {
+        const nodes = [element, ...element.querySelectorAll('*')];
+        return nodes.map(node => {
+            const style = node.getAttribute('style');
+            node.style.setProperty('color', 'transparent', 'important');
+            return style;
+        });
+    });
+    let capture;
+    try {
+        capture = await locator.screenshot({ animations: 'disabled' });
+    } finally {
+        await locator.evaluate((element, styles) => {
+            [element, ...element.querySelectorAll('*')].forEach((node, index) => {
+                if (styles[index] === null) node.removeAttribute('style');
+                else node.setAttribute('style', styles[index]);
+            });
+        }, previous);
+    }
+    const contrast = await page.evaluate(async ({ imageData, foreground }) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${imageData}`;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const context = canvas.getContext('2d');
+        context.drawImage(image, 0, 0);
+        const luminance = channels => channels.map(channel => {
+            const value = channel / 255;
+            return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+        }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+        const text = luminance(foreground);
+        let minimum = Infinity;
+        for (let y = Math.floor(image.height * 0.35); y < image.height * 0.7; y++) {
+            for (let x = Math.floor(image.width * 0.2); x < image.width * 0.8; x++) {
+                const background = luminance([...context.getImageData(x, y, 1, 1).data].slice(0, 3));
+                minimum = Math.min(minimum, (Math.max(text, background) + 0.05) / (Math.min(text, background) + 0.05));
+            }
+        }
+        return minimum;
+    }, { imageData: capture.toString('base64'), foreground });
+    if (contrast < 4.5) {
+        await test.info().attach('contrast-background', { body: capture, contentType: 'image/png' });
+    }
+    expect(contrast, `${locator} needs 4.5:1 text contrast over the rendered raster surface`).toBeGreaterThanOrEqual(4.5);
+}
+
+test.describe('aurora-glass-1 native material controls', () => {
+    test.use({ javaScriptEnabled: false });
+    for (const app of ['memory', 'mail']) {
+        for (const width of [1440, 390]) {
+            test(`${app} keeps native appearance and form controls usable at ${width}px`, async ({ page }) => {
+                await page.setViewportSize({ width, height: 1000 });
+                const response = await page.goto(`/?app=${app}&theme=aurora-glass-1`);
+                expect(response.status()).toBe(200);
+                await expect(page.locator('.custom-select-container')).toHaveCount(0);
+                await page.locator('#visibility').selectOption('shared');
+                await expect(page.locator('#visibility')).toHaveValue('shared');
+                await page.getByRole('button', { name: 'Reset example' }).click();
+                await expect(page.locator('#visibility')).toHaveValue('private');
+                await page.getByLabel('Navigate', { exact: true }).click();
+                await expect(page.locator('.nav-burger-menu a').first()).toBeVisible();
+                await page.getByLabel('Navigate', { exact: true }).click();
+                await page.locator('#theme').selectOption('dark');
+                await page.getByRole('button', { name: 'Apply appearance' }).click();
+                await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+            });
+        }
+    }
+});
+
+test.describe('polished material rendering', () => {
+    test.use({ deviceScaleFactor: 2 });
+    for (const theme of ['aurora-glass-1', 'leather-style-red-1', 'leather-style-black-1']) {
+        for (const app of ['memory', 'mail']) {
+            for (const width of [1440, 390]) {
+                test(`${theme} keeps smooth materials and readable controls in ${app} at ${width}px HiDPI`, async ({ page }, testInfo) => {
+                    await page.setViewportSize({ width, height: 1000 });
+                    await open(page, `?app=${app}&theme=${theme}`);
+                    for (const selector of ['.demo-actions .btn-primary', '.demo-actions .btn-secondary', '#title', '#notes', '.custom-select-trigger']) {
+                        const element = page.locator(selector).first();
+                        const foreground = await element.evaluate(element =>
+                            getComputedStyle(element).color.match(/[\d.]+/g).slice(0, 3).map(Number));
+                        await expectRasterTextContrast(page, element, foreground);
+                    }
+                    for (const pseudo of ['::before', '::after']) {
+                        expect(await page.locator('.card').first().evaluate((element, pseudo) =>
+                            getComputedStyle(element, pseudo).pointerEvents, pseudo)).toBe('none');
+                    }
+                    const button = page.locator('.demo-actions .btn-primary');
+                    const size = await button.boundingBox();
+                    const raisedShadow = await button.evaluate(element => getComputedStyle(element).boxShadow);
+                    await button.hover();
+                    await page.mouse.down();
+                    try {
+                        await expect.poll(() => button.evaluate(element => getComputedStyle(element).boxShadow)).not.toBe(raisedShadow);
+                        const pressed = await button.boundingBox();
+                        expect(pressed.width).toBe(size.width);
+                        expect(pressed.height).toBe(size.height);
+                    } finally {
+                        await page.mouse.up();
+                    }
+                    await page.mouse.move(0, 0);
+                    await page.evaluate(() => window.scrollTo(0, 0));
+                    await page.screenshot({ path: testInfo.outputPath('materials-hidpi.png'), fullPage: true, animations: 'disabled' });
+                    const picker = page.getByRole('combobox', { name: 'Theme', exact: true });
+                    await picker.click();
+                    const dropdown = page.locator('.custom-select-dropdown.open');
+                    await expectOpaqueDropdown(page, dropdown);
+                    await expect(dropdown.locator('.selected')).toBeInViewport();
+                    await page.keyboard.press('Escape');
+                    await expect(picker).toBeFocused();
+                    await page.emulateMedia({ reducedMotion: 'reduce' });
+                    await expect(button).toHaveCSS('transition-duration', '0s');
+                    await expect(page.locator('.card').first()).toHaveCSS('transition-duration', '0s');
+                    await page.emulateMedia({ media: 'print' });
+                    await expect(page.locator('.card').first()).toHaveCSS('background-image', 'none');
+                    for (const pseudo of ['::before', '::after']) {
+                        expect(await page.locator('.card').first().evaluate((element, pseudo) =>
+                            getComputedStyle(element, pseudo).display, pseudo)).toBe('none');
+                    }
+                });
+            }
+        }
+    }
+});
+
+for (const theme of ['leather-style-red-1', 'leather-style-black-1']) {
+    for (const app of ['memory', 'mail']) {
+        for (const width of [1440, 390]) {
+            test(`${theme} raster surfaces, frames and accessible controls in ${app} at ${width}px`, async ({ page }, testInfo) => {
+                await page.setViewportSize({ width, height: 1000 });
+                await open(page, `?app=${app}&theme=${theme}`);
+                for (const selector of ['.card', '.toolbar', '.ui-item', '.data-table th']) {
+                    const surface = await page.locator(selector).first().evaluate(element => getComputedStyle(element).backgroundImage);
+                    expect(surface).toContain(`/demo/skin/themes/${theme}/assets/panel-surface.webp`);
+                }
+                for (const selector of ['.btn-primary', '.btn-secondary', '.badge', '#title', '#notes', '#locked', '.custom-select-trigger', '.progress', '.progress-bar']) {
+                    const element = page.locator(selector).first();
+                    const image = await element.evaluate(element => getComputedStyle(element).backgroundImage);
+                    expect(image).toContain(`/demo/skin/themes/${theme}/assets/control-surface.webp`);
+                }
+                for (const selector of ['.card', '.toolbar', '.ui-item']) {
+                    const frame = await page.locator(selector).first().evaluate(element => {
+                        const style = getComputedStyle(element, '::before');
+                        return { image: style.borderImageSource, pointerEvents: style.pointerEvents };
+                    });
+                    expect(frame.image).toContain(`/demo/skin/themes/${theme}/assets/panel-frame.webp`);
+                    expect(frame.pointerEvents).toBe('none');
+                }
+                const card = page.locator('.card').first();
+                const withFrame = await card.screenshot({ animations: 'disabled' });
+                const suppress = await page.addStyleTag({ content: `.card::before { display: none !important; }` });
+                try {
+                    expect(withFrame.equals(await card.screenshot({ animations: 'disabled' })),
+                        'The raster chrome frame must visibly change the rendered panel').toBe(false);
+                } finally {
+                    await suppress.evaluate(element => element.remove());
+                }
+                const ordinary = page.locator('.ui-item').first();
+                await expectRasterTextContrast(page, ordinary, [255, 255, 255]);
+                const muted = await ordinary.locator('.ui-item-subtitle').evaluate(element =>
+                    getComputedStyle(element).color.match(/[\d.]+/g).slice(0, 3).map(Number));
+                await expectRasterTextContrast(page, ordinary, muted);
+                for (const selector of ['.demo-actions .btn-primary', '.demo-actions .btn-secondary', '#title', '#notes', '.custom-select-trigger']) {
+                    await expectRasterTextContrast(page, page.locator(selector).first(), [255, 255, 255]);
+                }
+                const plainLink = page.locator('.demo-links a:not(.btn)');
+                const linkColor = await plainLink.evaluate(element =>
+                    getComputedStyle(element).color.match(/[\d.]+/g).slice(0, 3).map(Number));
+                await expectRasterTextContrast(page, plainLink, linkColor);
+                const progressCapture = await page.locator('.progress').screenshot({ animations: 'disabled' });
+                const progressContrast = await page.evaluate(async imageData => {
+                    const image = new Image();
+                    image.src = `data:image/png;base64,${imageData}`;
+                    await image.decode();
+                    const canvas = document.createElement('canvas');
+                    canvas.width = image.width;
+                    canvas.height = image.height;
+                    const context = canvas.getContext('2d');
+                    context.drawImage(image, 0, 0);
+                    const luminanceAt = fraction => [...context.getImageData(
+                        Math.floor(image.width * fraction), Math.floor(image.height / 2), 1, 1,
+                    ).data].slice(0, 3).map(channel => {
+                        const value = channel / 255;
+                        return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+                    }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+                    const levels = [luminanceAt(0.3), luminanceAt(0.85)].sort((a, b) => b - a);
+                    return (levels[0] + 0.05) / (levels[1] + 0.05);
+                }, progressCapture.toString('base64'));
+                expect(progressContrast, 'Rendered progress fill must contrast with the unfilled track').toBeGreaterThanOrEqual(3);
+                for (const variant of ['success', 'danger']) {
+                    await page.locator('.demo-actions').evaluate((element, variant) => {
+                        const button = document.createElement('button');
+                        button.type = 'button';
+                        button.className = `btn btn-${variant}`;
+                        button.textContent = `${variant} preview`;
+                        element.appendChild(button);
+                    }, variant);
+                    const preview = page.getByRole('button', { name: `${variant} preview`, exact: true });
+                    try {
+                        await expectRasterTextContrast(page, preview, [255, 255, 255]);
+                        const color = await preview.evaluate(element => getComputedStyle(element).borderColor);
+                        expect(hasSemanticHue(color.match(/[\d.]+/g).map(Number), variant === 'success' ? 'active' : 'error')).toBe(true);
+                    } finally {
+                        await preview.evaluate(element => element.remove());
+                    }
+                }
+                const title = page.locator('#title');
+                await title.focus();
+                await expect(title).toHaveCSS('outline-style', 'solid');
+                await expect(title).toHaveCSS('outline-width', '2px');
+                const visibility = page.getByRole('combobox', { name: 'Visibility', exact: true });
+                await visibility.focus();
+                await page.keyboard.press('ArrowDown');
+                await page.keyboard.press('Enter');
+                await expect(page.locator('#visibility')).toHaveValue('shared');
+                await page.getByRole('button', { name: 'Reset example' }).click();
+                await expect(page.locator('#visibility')).toHaveValue('private');
+                await expect(page.locator('#locked')).toBeDisabled();
+                await expect(page.getByRole('button', { name: 'Delete selection' })).toBeDisabled();
+                const menu = page.getByLabel('Navigate', { exact: true });
+                await menu.click();
+                await expectRasterTextContrast(page, page.locator('.nav-burger-menu a[aria-current="page"]'), [255, 255, 255]);
+                await page.keyboard.press('Escape');
+                await expect(menu).toBeFocused();
+                await page.getByRole('combobox', { name: 'Theme', exact: true }).click();
+                await expectOpaqueDropdown(page, page.locator('.custom-select-dropdown.open'));
+                await page.keyboard.press('Escape');
+                await page.screenshot({ path: testInfo.outputPath(`${app}-leather.png`), fullPage: true, animations: 'disabled' });
+                await page.emulateMedia({ reducedMotion: 'reduce' });
+                await expect(card).toHaveCSS('transition-duration', '0s');
+                await page.emulateMedia({ media: 'print' });
+                await expect(page.locator('body')).toHaveCSS('background-image', 'none');
+                await expect(card).toHaveCSS('background-image', 'none');
+                expect(await card.evaluate(element => getComputedStyle(element, '::before').display)).toBe('none');
+                await expect(page.locator('.progress-bar')).toHaveCSS('background-color', 'rgb(85, 85, 85)');
+            });
+        }
+    }
+
+    test(`${theme} native controls work without JavaScript`, async ({ browser }) => {
+        const context = await browser.newContext({ javaScriptEnabled: false });
+        const errors = [];
+        await routeResources(context, errors);
+        try {
+            const page = await context.newPage();
+            const response = await page.goto(`http://127.0.0.1:18764/?app=mail&theme=${theme}`);
+            expect(response.status()).toBe(200);
+            await expect(page.locator('.custom-select-container')).toHaveCount(0);
+            await expect(page.locator('#visibility')).toBeVisible();
+            await page.locator('#visibility').selectOption('shared');
+            await expect(page.locator('#visibility')).toHaveValue('shared');
+            await page.getByLabel('Navigate', { exact: true }).click();
+            await expect(page.getByRole('link', { name: 'Domains', exact: true })).toBeVisible();
+            await expectPagerLayout(page);
+            await page.locator('#theme').selectOption(theme === 'leather-style-red-1' ? 'leather-style-black-1' : 'leather-style-red-1');
+            await page.getByRole('button', { name: 'Apply appearance' }).click();
+            await expect(page.locator('html')).not.toHaveAttribute('data-theme', theme);
+            expect(errors).toEqual([]);
+        } finally {
+            await context.close();
+        }
     });
 }
 

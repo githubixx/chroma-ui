@@ -1,0 +1,266 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+
+:root[data-theme="leather-style-black-1"] {
+    --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    --primary-color: #e4e4e7;
+    --primary-hover: #ffffff;
+    --secondary-color: #9ca3af;
+    --success-color: #4ade80;
+    --danger-color: #ff5264;
+    --warning-color: #fbbf24;
+    --bg-color: #050506;
+    --bg-image: url('assets/editorial-desktop.webp');
+    --surface-color: #101114;
+    --surface-hover: #303238;
+    --text-color: #ffffff;
+    --text-muted: #d4d4d8;
+    --border-color: #aeb1b8;
+    --shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 -1px 0 rgba(255, 255, 255, 0.06), 0 2px 3px rgba(0, 0, 0, 0.7), 0 14px 32px rgba(0, 0, 0, 0.48);
+    --shadow-lg: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(255, 255, 255, 0.08), 0 2px 3px rgba(0, 0, 0, 0.7), 0 20px 42px rgba(0, 0, 0, 0.55);
+    --nav-active-bg: #35373a;
+    --nav-active-border: #ffffff;
+    --nav-active-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+    --menu-scrim-color: rgba(0, 0, 0, 0.65);
+    --menu-scrim-padding: 8px;
+    --radius: 0.75rem;
+    --spacing: 1rem;
+    --leather-panel: url('assets/panel-surface.webp');
+    --leather-control: url('assets/control-surface.webp');
+    --leather-frame: url('assets/panel-frame.webp');
+    --leather-gloss: radial-gradient(ellipse at 50% -45%, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.12) 48%, transparent 68%), linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 46%, rgba(0, 0, 0, 0.45) 52%, transparent 100%);
+    --leather-raised-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.8), inset 1px 0 1px rgba(255, 255, 255, 0.18), inset 0 -2px 2px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(0, 0, 0, 0.85), 0 3px 4px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+}
+
+/* Consume artwork tokens here so relative URLs stay inside this whole theme. */
+:root[data-theme="leather-style-black-1"] body {
+    background-image: var(--bg-image-selected, var(--bg-image));
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+}
+
+:root[data-theme="leather-style-black-1"] a {
+    color: var(--primary-color);
+    background-color: var(--surface-color);
+}
+
+:root[data-theme="leather-style-black-1"] :is(.nav-brand a, .nav-links a) {
+    color: var(--text-color);
+    background-color: transparent;
+}
+
+:root[data-theme="leather-style-black-1"] :is(header, footer, .card, .panel, .toolbar, .ui-item, .log-panel) {
+    background-color: var(--surface-color);
+    background-image: radial-gradient(ellipse at 25% 0, rgba(211, 230, 245, 0.18), transparent 65%), linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent 60%), var(--leather-panel);
+    background-size: 100% 150px, 100% 60px, 100% 100%;
+    background-repeat: no-repeat;
+    border-color: #747980;
+    box-shadow: var(--shadow);
+}
+
+:root[data-theme="leather-style-black-1"] :is(.card, .panel, .toolbar, .ui-item) {
+    position: relative;
+}
+
+/* Nine-slice raster edges preserve chrome and seams on variable-size panels. */
+:root[data-theme="leather-style-black-1"] :is(.card, .panel, .toolbar, .ui-item)::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 10px solid transparent;
+    border-image: var(--leather-frame) 52 / 10px stretch;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* Rounded, resolution-independent rims soften the original raster frame. */
+:root[data-theme="leather-style-black-1"] :is(.card, .panel, .toolbar, .ui-item)::after {
+    content: '';
+    position: absolute;
+    inset: 1px;
+    border-radius: inherit;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.48), inset 1px 0 1px rgba(228, 237, 247, 0.18), inset 0 -1px 1px rgba(255, 255, 255, 0.12), inset 0 0 0 3px rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+}
+
+:root[data-theme="leather-style-black-1"] .ui-item::before {
+    inset: 4px;
+    border-width: 5px;
+    border-image-width: 5px;
+}
+
+:root[data-theme="leather-style-black-1"] .card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+:root[data-theme="leather-style-black-1"] :is(.btn, .badge, .custom-select-trigger, input[type="text"], input[type="number"], input[type="password"], input[type="date"], input[type="time"], select, textarea, .progress, .progress-bar, .toggle-chip) {
+    color: var(--text-color);
+    background-color: var(--surface-color);
+    background-image: var(--leather-gloss), radial-gradient(ellipse at 50% 140%, rgba(199, 215, 232, 0.24), transparent 70%), var(--leather-control);
+    background-size: 100% 100%;
+    background-clip: padding-box;
+    border-color: var(--border-color);
+    box-shadow: var(--leather-raised-shadow);
+}
+
+:root[data-theme="leather-style-black-1"] select {
+    padding: 0.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius);
+    font-size: 1rem;
+    max-width: 100%;
+}
+
+:root[data-theme="leather-style-black-1"] :is(input[type="checkbox"], input[type="radio"]) {
+    accent-color: var(--primary-color);
+}
+
+:root[data-theme="leather-style-black-1"] .btn-secondary {
+    background-image: var(--leather-gloss), linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), var(--leather-control);
+}
+
+:root[data-theme="leather-style-black-1"] :is(.progress, input[type="text"], input[type="number"], input[type="password"], input[type="date"], input[type="time"], select, textarea, .custom-select-trigger) {
+    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.35)), var(--leather-control);
+    border-color: #777e88;
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.85), inset 0 -1px 0 rgba(255, 255, 255, 0.16), 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+:root[data-theme="leather-style-black-1"] .btn.btn-success {
+    background-image: var(--leather-gloss), linear-gradient(rgba(5, 85, 39, 0.9), rgba(5, 85, 39, 0.9)), var(--leather-control);
+    border-color: var(--success-color);
+}
+
+:root[data-theme="leather-style-black-1"] .progress .progress-bar {
+    background-image: var(--leather-gloss), linear-gradient(rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0.7)), var(--leather-control);
+}
+
+:root[data-theme="leather-style-black-1"] .btn.btn-danger {
+    background-image: var(--leather-gloss), linear-gradient(rgba(112, 4, 24, 0.85), rgba(112, 4, 24, 0.85)), var(--leather-control);
+    border-color: var(--danger-color);
+}
+
+:root[data-theme="leather-style-black-1"] .toggle-chip-input:checked + .toggle-chip {
+    background-image: var(--leather-gloss), var(--leather-control);
+    border-color: var(--nav-active-border);
+}
+
+:root[data-theme="leather-style-black-1"] .btn:not(:disabled):not([disabled]):hover {
+    filter: brightness(1.08);
+    border-color: var(--nav-active-border);
+    box-shadow: var(--leather-raised-shadow), 0 0 12px rgba(220, 232, 247, 0.15);
+}
+
+:root[data-theme="leather-style-black-1"] .btn:not(:disabled):not([disabled]):active {
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.8), inset 0 -1px 0 rgba(255, 255, 255, 0.3);
+}
+
+:root[data-theme="leather-style-black-1"] :is(input, select, textarea):disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+:root[data-theme="leather-style-black-1"] :is(.nav-burger-menu, .custom-select-dropdown) {
+    background-color: var(--surface-color);
+    background-image: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), var(--leather-panel);
+    background-size: 100% 100%;
+    border-color: var(--border-color);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: none;
+}
+
+:root[data-theme="leather-style-black-1"] :is(option, .custom-select-option.selected, .custom-select-option:hover, .nav-burger-menu a:hover, .nav-burger-menu a.active, .nav-burger-menu a[aria-current="page"], .nav-links a.active, .nav-links a[aria-current="page"]) {
+    background: var(--nav-active-bg);
+    color: var(--text-color);
+}
+
+:root[data-theme="leather-style-black-1"] option {
+    background: var(--surface-color);
+}
+
+:root[data-theme="leather-style-black-1"] :is(.btn, a, input, select, textarea, .custom-select-trigger):focus-visible,
+:root[data-theme="leather-style-black-1"] :is(input, select, textarea):focus,
+:root[data-theme="leather-style-black-1"] .toggle-chip-input:focus-visible + .toggle-chip {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+}
+
+:root[data-theme="leather-style-black-1"] .custom-select-trigger[aria-invalid="true"] {
+    border-color: var(--danger-color);
+}
+
+:root[data-theme="leather-style-black-1"] .ui-item {
+    border-left-width: 5px;
+}
+
+:root[data-theme="leather-style-black-1"] .ui-item.is-active {
+    border-color: var(--success-color);
+}
+
+:root[data-theme="leather-style-black-1"] .ui-item.is-warning {
+    border-color: var(--warning-color);
+}
+
+:root[data-theme="leather-style-black-1"] .ui-item.is-error {
+    border-color: var(--danger-color);
+}
+
+:root[data-theme="leather-style-black-1"] .ui-item.is-inactive {
+    border-color: var(--secondary-color);
+    opacity: 0.7;
+}
+
+:root[data-theme="leather-style-black-1"] :is(.data-table th, .data-table td) {
+    background-color: var(--surface-color);
+    background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), var(--leather-panel);
+    background-size: 100% 100%;
+}
+
+:root[data-theme="leather-style-black-1"] :is(.data-table tbody tr:hover, .data-table tbody tr.is-selected) td {
+    background-image: linear-gradient(rgba(53, 55, 58, 0.85), rgba(53, 55, 58, 0.85)), var(--leather-panel);
+}
+
+@media (max-width: 768px) {
+    :root[data-theme="leather-style-black-1"] {
+        --bg-image: url('assets/editorial-mobile.webp');
+        --spacing: 0.85rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    :root[data-theme="leather-style-black-1"] :is(.card, .btn, .progress-bar, .custom-select-option) {
+        transition: none;
+    }
+
+    :root[data-theme="leather-style-black-1"] :is(.card:hover, .btn:hover) {
+        transform: none;
+    }
+
+    :root[data-theme="leather-style-black-1"] .custom-select-dropdown.open,
+    :root[data-theme="leather-style-black-1"] .progress-indeterminate::before {
+        animation: none;
+    }
+}
+
+@media print {
+    :root[data-theme="leather-style-black-1"] body,
+    :root[data-theme="leather-style-black-1"] :is(header, footer, .card, .panel, .toolbar, .ui-item, .log-panel, .btn, a, .badge, .custom-select-trigger, input, select, textarea, .data-table th, .data-table td, .progress, .progress-bar, .nav-burger-menu, .custom-select-dropdown) {
+        background: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+    }
+
+    :root[data-theme="leather-style-black-1"] :is(.card, .panel, .toolbar, .ui-item)::before,
+    :root[data-theme="leather-style-black-1"] :is(.card, .panel, .toolbar, .ui-item)::after {
+        display: none;
+    }
+
+    :root[data-theme="leather-style-black-1"] :is(h1, h2, h3, p, a, label, .ui-item-subtitle, .ui-item-meta) {
+        color: #000000;
+    }
+
+    :root[data-theme="leather-style-black-1"] .progress .progress-bar {
+        background: #555555 !important;
+    }
+}

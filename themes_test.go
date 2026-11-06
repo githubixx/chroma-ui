@@ -14,9 +14,20 @@ import (
 	"testing"
 )
 
-func TestOriginalThemeMetadataAndArtwork(t *testing.T) {
-	// Fingerprints of the original VDR files, not regenerated library output.
-	originals := map[string]string{
+func TestBundledThemeMetadataAndArtwork(t *testing.T) {
+	fingerprints := map[string]string{
+		"leather-style-black-1/theme.yaml":                               "46c6b45fdb6cc2c211e23d2623594b4c8cdfc17fe9c0c796449cdbf6f142c04e",
+		"leather-style-black-1/assets/control-surface.webp":              "45eea860786f35219484831e5d01e29ee0965b15521d99cbfa98f9364b958dea",
+		"leather-style-black-1/assets/editorial-desktop.webp":            "766dc4a73771d5b0a9116eed62f441b7a4ca5e23e67b49171f79eed9e90020d9",
+		"leather-style-black-1/assets/editorial-mobile.webp":             "f8c55f49d0869f871c694913e5a5a4fa3298da7734ac5fb0b52379a9792fd3bb",
+		"leather-style-black-1/assets/panel-frame.webp":                  "56ecedccc86b99b098b53bb1671c10beda9d0e768c680e759d22370cbaa1ffda",
+		"leather-style-black-1/assets/panel-surface.webp":                "eefc05ff9874dd8caf0afb70b10e5817b78bc847380b5863957f81e6aeb1d923",
+		"leather-style-red-1/theme.yaml":                                 "e2db339fcf9a83d3db29052800342c60770536cda54dbf2d1c603017bc461513",
+		"leather-style-red-1/assets/control-surface.webp":                "75f850a18c3533114c90aa47bd3038755cbe7110dacf03471535023e6d06482e",
+		"leather-style-red-1/assets/editorial-desktop.webp":              "965f32cfca0bc456d9e1be7fb88d6ca7e02ff51b39aa6866c31f23c78c9cbafe",
+		"leather-style-red-1/assets/editorial-mobile.webp":               "2c7f1cbef0c4ac8b5820efff20a966870a748a6a85052e2e600ac4d9c5269b33",
+		"leather-style-red-1/assets/panel-frame.webp":                    "f25fe9ba7e11c89ca0fb854f17f80a477b35580be3102fcc13348a0d33e9a543",
+		"leather-style-red-1/assets/panel-surface.webp":                  "caa976f2e328543bca98b9aaa1ef04a7665c3810498728055b3041e0c78cf28d",
 		"fitness/assets/noise.svg":                                       "90ec0b01e7bd68b7d92221148adbb6c75f883d0fb0dff620b85bc418ac9c48b7",
 		"retro-arcade/assets/noise.svg":                                  "14ff350f15318219574f7d8d4f643c63679d158a81183f47737ace734049f6ae",
 		"aurora-glass-1/assets/aurora-desktop.avif":                      "5fbae4d56cd01df73476f97a7263ef2754d0ca9c82ec302c0158c3e9d89978aa",
@@ -76,32 +87,32 @@ func TestOriginalThemeMetadataAndArtwork(t *testing.T) {
 		"crt-starfield-1/assets/crt-sky.webp":                            "43c597fa4c32fb28e1ae2ea6af853a3d8eccd0a0489786351c42d4bc3b9833b2",
 	}
 	for _, id := range bundledIDs {
-		if _, ok := originals[id+"/theme.yaml"]; !ok {
-			t.Errorf("missing original metadata fingerprint for %s", id)
-		}
-		err := fs.WalkDir(assets, "assets/themes", func(name string, entry fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			if entry.IsDir() || strings.HasSuffix(name, "/theme.css") {
-				return nil
-			}
-			if _, ok := originals[strings.TrimPrefix(name, "assets/themes/")]; !ok {
-				t.Errorf("unverified bundled file %s", name)
-			}
-			return nil
-		})
-		if err != nil {
-			t.Fatal(err)
+		if _, ok := fingerprints[id+"/theme.yaml"]; !ok {
+			t.Errorf("missing metadata fingerprint for %s", id)
 		}
 	}
-	for file, fingerprint := range originals {
+	err := fs.WalkDir(assets, "assets/themes", func(name string, entry fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() || strings.HasSuffix(name, "/theme.css") {
+			return nil
+		}
+		if _, ok := fingerprints[strings.TrimPrefix(name, "assets/themes/")]; !ok {
+			t.Errorf("unverified bundled file %s", name)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for file, fingerprint := range fingerprints {
 		data, err := assets.ReadFile("assets/themes/" + file)
 		if err != nil {
 			t.Fatal(err)
 		}
 		if got := fmt.Sprintf("%x", sha256.Sum256(data)); got != fingerprint {
-			t.Errorf("original %s changed: %s", file, got)
+			t.Errorf("bundled %s changed: %s", file, got)
 		}
 	}
 }
@@ -150,13 +161,21 @@ func TestThemeReferencesArePortableAndPublic(t *testing.T) {
 }
 
 func TestWholeOverrideDoesNotBorrowBundledArtwork(t *testing.T) {
-	const asset = "/themes/crt-starfield-1/assets/crt-sky.webp"
-	bundled := newCatalog(t, nil).Handler(nil)
-	if got := response(bundled, http.MethodGet, asset); got.Code != http.StatusOK {
-		t.Fatal("bundled artwork unavailable")
-	}
-	override := newCatalog(t, overrideTheme("crt-starfield-1", "Local CRT", ":root {}")).Handler(nil)
-	if got := response(override, http.MethodGet, asset); got.Code != http.StatusNotFound {
-		t.Fatalf("incomplete local override borrowed bundled artwork: %d", got.Code)
+	for id, artwork := range map[string]string{
+		"crt-starfield-1":       "crt-sky.webp",
+		"leather-style-red-1":   "editorial-desktop.webp",
+		"leather-style-black-1": "editorial-desktop.webp",
+	} {
+		t.Run(id, func(t *testing.T) {
+			asset := "/themes/" + id + "/assets/" + artwork
+			bundled := newCatalog(t, nil).Handler(nil)
+			if got := response(bundled, http.MethodGet, asset); got.Code != http.StatusOK {
+				t.Fatal("bundled artwork unavailable")
+			}
+			override := newCatalog(t, overrideTheme(id, "Local Theme", ":root {}")).Handler(nil)
+			if got := response(override, http.MethodGet, asset); got.Code != http.StatusNotFound {
+				t.Fatalf("incomplete local override borrowed bundled artwork: %d", got.Code)
+			}
+		})
 	}
 }

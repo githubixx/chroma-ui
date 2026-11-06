@@ -3,9 +3,17 @@
 Reusable themes for server-rendered Go applications, initially extracted from
 [vdradmin-go](https://github.com/githubixx/vdradmin-go).
 
-The library embeds 37 themes, a validated theme catalog, shared component CSS,
+The library embeds 39 themes, a validated theme catalog, shared component CSS,
 configurable navigation templates, and optional JavaScript helpers. Applications
 retain their own content, routes, layouts, authorization, and theme selection.
+
+## Gallery
+
+The standalone showcase using `crt-starfield-1`:
+
+![Memory Desk showcase using the CRT Starfield 1 theme](screenshots/crt-starfield-1.png)
+
+See [GALLERY.md](GALLERY.md) for screenshots of the bundled themes.
 
 ## Installation
 
@@ -115,6 +123,8 @@ replacement with the same ID. This value is assigned by the catalog, not YAML.
 | `glas-1` | Light glass surfaces |
 | `gold-1` | Gold accents and polished surfaces |
 | `golden-moon` | Lunar artwork and SVG button treatments |
+| `leather-style-red-1` | Cinematic fashion artwork, glossy red patent surfaces, and chrome frames |
+| `leather-style-black-1` | Natural-color fashion artwork, glossy black patent surfaces, and chrome frames |
 | `lighting-1` | Luminous panels and electric accents |
 | `luxury-1` | Glossy panels and pill controls |
 | `mantle-1` | Charcoal panels, gradient accents, and serif headings |
@@ -125,6 +135,11 @@ replacement with the same ID. This value is assigned by the catalog, not YAML.
 | `spaceship-2` | Sharp SVG-framed controls, panels, and state fills |
 | `spaceship-<color>-<dark\|light>` | 20 HUD palettes with angular decorations |
 | `crt-starfield-1` | CRT/starfield artwork and restrained comet animation |
+
+Aurora Glass and the Leather Style themes use resolution-independent CSS
+reflections and beveled edges, with recessed form fields and raised buttons.
+Their original artwork and palettes are preserved; the material treatments
+scale with the controls rather than relying on enlarged bitmap highlights.
 
 Spaceship palette colors are `blue`, `cyan`, `green`, `grey`, `magenta`,
 `mono`, `orange`, `purple`, `red`, and `yellow`. Both accent variants retain
@@ -438,22 +453,4 @@ published revision; do not invent a release version.
 
 ## License and attribution
 
-GPL-3.0-or-later; see [LICENSE](LICENSE). The bundled themes originate
-from `web/themes/` in
-[githubixx/vdradmin-go](https://github.com/githubixx/vdradmin-go) and retain their
-original metadata and attribution. The shared CSS, header structure, bootstrap,
-menu behavior, and optional select helper are derived from the original
-`web/static/css/base.css`, `web/templates/_nav.html`, and
-`web/static/js/theme.js`; application-specific layout and policy are excluded.
-The CRT runtime WebP images derive from original generated CRT artwork.
-Within the CRT theme, only `crt-hero-fade.webp` and `crt-sky.webp` are bundled,
-not the source PNG.
-Metadata and runtime artwork are checked against original SHA-256 fingerprints;
-no reference-site images or logos are included.
-
-The other runtime artwork comes from the corresponding original theme asset
-directories: Aurora's AVIF/WebP backgrounds and SVG gloss overlays, Fitness
-and Retro noise SVGs, Golden Moon's background SVG, Luxury's gloss SVGs, Solar
-System's background PNG, and Space Night's AVIF/WebP/PNG background variants.
-Space Night's PNGs remain runtime fallbacks. Unreferenced source images, Aurora
-frame-regeneration PNGs, and unused alternative SVGs are not bundled.
+GPL-3.0-or-later; see [LICENSE](LICENSE).

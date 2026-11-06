@@ -27,6 +27,8 @@ func ExampleNewCatalog() {
 	// glas-1
 	// gold-1
 	// golden-moon
+	// leather-style-black-1
+	// leather-style-red-1
 	// light
 	// lighting-1
 	// luxury-1

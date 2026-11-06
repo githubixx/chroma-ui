@@ -15,7 +15,8 @@ import (
 
 var bundledIDs = []string{
 	"aurora-glass-1", "cartoon-1", "crt-starfield-1", "dark", "fitness",
-	"glas-1", "gold-1", "golden-moon", "light", "lighting-1", "luxury-1",
+	"glas-1", "gold-1", "golden-moon", "leather-style-black-1", "leather-style-red-1",
+	"light", "lighting-1", "luxury-1",
 	"mantle-1", "metal-1", "retro-arcade", "solar-system-1", "space-night-1",
 	"spaceship-2", "spaceship-blue-dark", "spaceship-blue-light",
 	"spaceship-cyan-dark", "spaceship-cyan-light", "spaceship-green-dark",
@@ -48,8 +49,8 @@ func TestBundledThemes(t *testing.T) {
 	var ids []string
 	for _, theme := range themes {
 		ids = append(ids, theme.ID)
-		if !theme.Bundled || theme.Author != "vdradmin-go" || theme.Name == "" || theme.Version != "1.0.0" {
-			t.Errorf("metadata not preserved: %+v", theme)
+		if !theme.Bundled || theme.Author == "" || theme.Name == "" || theme.Version == "" || theme.Description == "" {
+			t.Errorf("incomplete bundled metadata: %+v", theme)
 		}
 	}
 	if !reflect.DeepEqual(ids, bundledIDs) {
